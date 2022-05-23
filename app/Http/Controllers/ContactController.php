@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use App\TransactionPayment;
 use Spatie\Activitylog\Models\Activity;
+use App\Http\DexHelpers;
 
 class ContactController extends Controller
 {
@@ -801,6 +802,16 @@ class ContactController extends Controller
                 $output = $this->contactUtil->updateContact($input, $id, $business_id);
 
                 $this->contactUtil->activityLog($output['data'], 'edited');
+
+                //Triger Dex API.
+                $dexHelpers = new DexHelpers();
+                $dexHelpers->updateCustomer($id, array(
+                    "email" =>  $input["email"],
+                    "first_name"    =>  $input["first_name"],
+                    "last_name" =>  $input["last_name"],
+                    "dob"   =>  $input["dob"],
+                    "phone_number"  =>  $input["mobile"]
+                ));
 
             } catch (\Exception $e) {
                 \Log::emergency("File:" . $e->getFile(). "Line:" . $e->getLine(). "Message:" . $e->getMessage());
