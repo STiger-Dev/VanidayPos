@@ -11,6 +11,8 @@ use App\Contact;
 use App\Utils\ContactUtil;
 use Illuminate\Support\Facades\DB;
 use App\Utils\TransactionUtil;
+use App\Transaction;
+use App\User;
 
 /**
  * @group Contact management
@@ -738,6 +740,55 @@ class ContactController extends ApiController
 
             DB::commit();
             return new CommonResource($payment);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::emergency("File:" . $e->getFile(). "Line:" . $e->getLine(). "Message:" . $e->getMessage());
+            return $this->otherExceptions($e);
+        }
+    }
+
+    /**
+     * Delete Contact
+     *
+     * @urlParam required id of the contact to be deleted
+     * 
+     */
+    public function destroy($id)
+    {
+        try {
+            $business_id = Auth::user()->business_id;
+
+            //Check if any transaction related to this contact exists
+            $count = Transaction::where('business_id', $business_id)
+                                ->where('contact_id', $id)
+                                ->count();
+            if ($count == 0) {
+                $contact = Contact::where('business_id', $business_id)->findOrFail($id);
+                if (!$contact->is_default) {
+
+                    $log_properities = [
+                        'id' => $contact->id,
+                        'name' => $contact->name,
+                        'supplier_business_name' => $contact->supplier_business_name
+                    ];
+                    $this->contactUtil->activityLog($contact, 'contact_deleted', $log_properities);
+
+                    //Disable login for associated users
+                    User::where('crm_contact_id', $contact->id)
+                        ->update(['allow_login' => 0]);
+
+                    $contact->delete();
+                }
+                $output = ['success' => true,
+                            'msg' => __("contact.deleted_success")
+                            ];
+            } else {
+                $output = ['success' => false,
+                            'msg' => __("lang_v1.you_cannot_delete_this_contact")
+                            ];
+            }
+
+            return new CommonResource($output);
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::emergency("File:" . $e->getFile(). "Line:" . $e->getLine(). "Message:" . $e->getMessage());

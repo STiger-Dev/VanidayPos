@@ -12,7 +12,7 @@ Route::group(['middleware' => ['auth:api', 'timezone'], 'prefix' => 'connector/a
 {
 	Route::resource('business-location', 'BusinessLocationController', ['only' => ['index', 'show']]);
 
-	Route::resource('contactapi', 'ContactController', ['only' => ['index', 'show', 'store', 'update']]);
+	Route::resource('contactapi', 'ContactController', ['only' => ['index', 'show', 'store', 'update', 'destroy']]);
 
 	Route::post('contactapi-payment', 'ContactController@contactPay');
 

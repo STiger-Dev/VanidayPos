@@ -861,6 +861,10 @@ class ContactController extends Controller
                             ->update(['allow_login' => 0]);
 
                         $contact->delete();
+
+                        //Triger Dex API.
+                        $dexHelpers = new DexHelpers();
+                        $dexHelpers->deleteCustomer($contact->id);
                     }
                     $output = ['success' => true,
                                 'msg' => __("contact.deleted_success")
