@@ -6,6 +6,10 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Spatie\Permission\Models\Permission;
+use Modules\Connector\Transformers\CommonResource;
+use Illuminate\Support\Facades\DB;
+use App\Utils\ModuleUtil;
 
 use Modules\Connector\Transformers\BusinessLocationResource;
 
@@ -215,5 +219,137 @@ class BusinessLocationController extends ApiController
                         ->get();
 
         return BusinessLocationResource::collection($locations);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            $business_id = $user->business_id;
+
+            $input = $request->only(['name', 'landmark', 'city', 'state', 'country', 'zip_code', 'invoice_scheme_id',
+                'invoice_layout_id', 'mobile', 'alternate_number', 'email', 'website', 'custom_field1', 'custom_field2', 'custom_field3', 'custom_field4', 'location_id', 'selling_price_group_id', 'default_payment_accounts', 'featured_products', 'sale_invoice_layout_id']);
+
+            $input['business_id'] = $business_id;
+
+            $input['default_payment_accounts'] = !empty($input['default_payment_accounts']) ? json_encode($input['default_payment_accounts']) : null;
+
+            $moduleUtil = new ModuleUtil();
+            //Update reference count
+            $ref_count = $moduleUtil->setAndGetReferenceCount('business_location', $business_id);
+
+            if (empty($input['location_id'])) {
+                $input['location_id'] = $moduleUtil->generateReferenceNumber('business_location', $ref_count);
+            }
+            if (!isset($input['invoice_scheme_id'])) {
+                $input['invoice_scheme_id'] = 1;
+            }
+            if (!isset($input['invoice_layout_id'])) {
+                $input['invoice_layout_id'] = 1;
+            }
+            if (!isset($input['sale_invoice_layout_id'])) {
+                $input['sale_invoice_layout_id'] = 1;
+            }
+            if (!isset($input['selling_price_group_id'])) {
+                $input['selling_price_group_id'] = 1;
+            }
+
+            DB::beginTransaction();
+
+            $location = BusinessLocation::create($input);
+
+            //Create a new permission related to the created location
+            Permission::create(['name' => 'location.' . $location->id ]);
+
+            DB::commit();
+            $output = ['success' => true,
+                        'data' =>  $location,
+                        'msg' => __("business.business_location_added_success")
+                      ];
+            
+            return new CommonResource($output);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            \Log::emergency("File:" . $e->getFile(). "Line:" . $e->getLine(). "Message:" . $e->getMessage());
+            
+            return $this->otherExceptions($e);
+        }
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\StoreFront  $storeFront
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $id)
+    {
+        try {
+            $input = $request->only(['name', 'landmark', 'city', 'state', 'country',
+                'zip_code', 'invoice_scheme_id',
+                'invoice_layout_id', 'mobile', 'alternate_number', 'email', 'website', 'custom_field1', 'custom_field2', 'custom_field3', 'custom_field4', 'location_id', 'selling_price_group_id', 'default_payment_accounts', 'featured_products', 'sale_invoice_layout_id']);
+            
+            $user = Auth::user();
+            $business_id = $user->business_id;
+
+            $input['default_payment_accounts'] = !empty($input['default_payment_accounts']) ? json_encode($input['default_payment_accounts']) : null;
+
+            $input['featured_products'] = !empty($input['featured_products']) ? json_encode($input['featured_products']) : null;
+
+            $location = BusinessLocation::where('business_id', $business_id)
+                            ->where('id', $id)
+                            ->update($input);
+
+            $output = ['success' => true,
+                       'data'   =>  $location,
+                       'msg' => __('business.business_location_updated_success')
+            ];
+
+            new CommonResource($output);
+        } catch (\Exception $e) {
+            \Log::emergency("File:" . $e->getFile(). "Line:" . $e->getLine(). "Message:" . $e->getMessage());
+            
+            return $this->otherExceptions($e);
+        }
+
+        return $output;
+    }
+
+    /**
+     * Delete Contact
+     *
+     * @urlParam required id of the contact to be deleted
+     * 
+     */
+    public function destroy($id)
+    {
+        try {
+            $business_id = Auth::user()->business_id;
+
+            $business_location = BusinessLocation::where('business_id', $business_id)
+                            ->findOrFail($id);
+
+            $business_location->is_active = !$business_location->is_active;
+            $business_location->save();
+
+            $msg = $business_location->is_active ? __('lang_v1.business_location_activated_successfully') : __('lang_v1.business_location_deactivated_successfully');
+
+            $output = ['success' => true,
+                            'msg' => $msg
+                        ];
+
+            return new CommonResource($output);
+        } catch (\Exception $e) {
+            \Log::emergency("File:" . $e->getFile(). "Line:" . $e->getLine(). "Message:" . $e->getMessage());
+            return $this->otherExceptions($e);
+        }
     }
 }

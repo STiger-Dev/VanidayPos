@@ -10,7 +10,7 @@ Route::group(['middleware' => ['web', 'SetSessionData', 'auth', 'language', 'tim
 
 Route::group(['middleware' => ['auth:api', 'timezone'], 'prefix' => 'connector/api', 'namespace' => 'Modules\Connector\Http\Controllers\Api'], function()
 {
-	Route::resource('business-location', 'BusinessLocationController', ['only' => ['index', 'show']]);
+	Route::resource('business-location', 'BusinessLocationController', ['only' => ['index', 'show', 'store', 'update', 'destroy']]);
 
 	Route::resource('contactapi', 'ContactController', ['only' => ['index', 'show', 'store', 'update', 'destroy']]);
 
