@@ -28,4 +28,20 @@ class DexHelpers
         ]);
         $client->request("DELETE" ,"/erp/customers/{$id}");
     }
+
+    public function updateLocation($id, $params) {
+        $client = new Client([
+            // Base URI is used with relative requests
+            'base_uri' => $this->dexUrl
+        ]);
+        $client->request("PATCH" ,"/erp/location/{$id}", ['body'=>json_encode($params)]);
+    }
+
+    public function deleteLocation($id) {
+        $client = new Client([
+            // Base URI is used with relative requests
+            'base_uri' => $this->dexUrl
+        ]);
+        $client->request("DELETE" ,"/erp/location/{$id}");
+    }
 }

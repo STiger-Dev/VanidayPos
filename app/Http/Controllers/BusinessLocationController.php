@@ -12,6 +12,7 @@ use App\Utils\Util;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 use Yajra\DataTables\Facades\DataTables;
+use App\Http\DexHelpers;
 
 class BusinessLocationController extends Controller
 {
@@ -281,6 +282,13 @@ class BusinessLocationController extends Controller
                             ->where('id', $id)
                             ->update($input);
 
+            //Triger Dex API.
+            $dexHelpers = new DexHelpers();
+            $dexHelpers->updateLocation($id, array(
+                "name" =>  $input["name"],
+                "phone_number"  =>  $input["mobile"]
+            ));
+
             $output = ['success' => true,
                             'msg' => __('business.business_location_updated_success')
                         ];
@@ -358,6 +366,9 @@ class BusinessLocationController extends Controller
 
             $msg = $business_location->is_active ? __('lang_v1.business_location_activated_successfully') : __('lang_v1.business_location_deactivated_successfully');
 
+            //Triger Dex API.
+            $dexHelpers = new DexHelpers();
+            $dexHelpers->deleteLocation($location_id);
             $output = ['success' => true,
                             'msg' => $msg
                         ];
