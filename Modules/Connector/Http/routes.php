@@ -22,7 +22,7 @@ Route::group(['middleware' => ['auth:api', 'timezone'], 'prefix' => 'connector/a
 
 	Route::resource('brand', 'BrandController', ['only' => ['index', 'show']]);
 
-	Route::resource('product', 'ProductController', ['only' => ['index', 'show']]);
+	Route::resource('product', 'ProductController', ['only' => ['index', 'show', 'store', 'update', 'destroy']]);
 
 	Route::get('selling-price-group', 'ProductController@getSellingPriceGroup');
 

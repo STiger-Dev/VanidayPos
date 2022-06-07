@@ -12,6 +12,12 @@ use Modules\Connector\Transformers\CommonResource;
 use App\Product;
 use App\Variation;
 use App\SellingPriceGroup;
+use App\Utils\ModuleUtil;
+use App\Utils\ProductUtil;
+use App\Utils\BusinessUtil;
+use Illuminate\Support\Facades\DB;
+use App\PurchaseLine;
+use App\VariationLocationDetails;
 
 /**
  * @group Product management
@@ -1079,5 +1085,390 @@ class ProductController extends ApiController
                                         ->get();
 
         return CommonResource::collection($price_groups);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            $business_id = $user->business_id;
+
+            $form_fields = ['name', 'brand_id', 'unit_id', 'category_id', 'tax', 'type', 'barcode_type', 'sku', 'alert_quantity', 'tax_type', 'weight', 'product_custom_field1', 'product_custom_field2', 'product_custom_field3', 'product_custom_field4', 'product_description', 'sub_unit_ids'];
+
+            $moduleUtil = new ModuleUtil();
+            $productUtil = new ProductUtil();
+            $module_form_fields = $moduleUtil->getModuleFormField('product_form_fields');
+            if (!empty($module_form_fields)) {
+                $form_fields = array_merge($form_fields, $module_form_fields);
+            }
+            
+            $product_details = $request->only($form_fields);
+            $product_details['business_id'] = $business_id;
+            $product_details['created_by'] = $user->business_id;
+
+            $product_details['enable_stock'] = (!empty($request->input('enable_stock')) &&  $request->input('enable_stock') == 1) ? 1 : 0;
+            $product_details['not_for_selling'] = (!empty($request->input('not_for_selling')) &&  $request->input('not_for_selling') == 1) ? 1 : 0;
+
+            if (!empty($request->input('sub_category_id'))) {
+                $product_details['sub_category_id'] = $request->input('sub_category_id') ;
+            }
+
+            if (empty($product_details['sku'])) {
+                $product_details['sku'] = ' ';
+            }
+
+            if (!empty($product_details['alert_quantity'])) {
+                $product_details['alert_quantity'] = $productUtil->num_uf($product_details['alert_quantity']);
+            }
+
+            $businessUtil = new BusinessUtil();
+            $businessInfo = $businessUtil->getDetails($business_id);
+            $expiry_enabled = $businessInfo['enable_product_expiry'];
+            if (!empty($request->input('expiry_period_type')) && !empty($request->input('expiry_period')) && !empty($expiry_enabled) && ($product_details['enable_stock'] == 1)) {
+                $product_details['expiry_period_type'] = $request->input('expiry_period_type');
+                $product_details['expiry_period'] = $productUtil->num_uf($request->input('expiry_period'));
+            }
+
+            if (!empty($request->input('enable_sr_no')) &&  $request->input('enable_sr_no') == 1) {
+                $product_details['enable_sr_no'] = 1 ;
+            }
+
+            $product_details['warranty_id'] = !empty($request->input('warranty_id')) ? $request->input('warranty_id') : null;
+
+            DB::beginTransaction();
+
+            $product = Product::create($product_details);
+
+            if (empty(trim($request->input('sku')))) {
+                $sku = $productUtil->generateProductSku($product->id);
+                $product->sku = $sku;
+                $product->save();
+            }
+
+            //Add product locations
+            $product_locations = $request->input('product_locations');
+            if (!empty($product_locations)) {
+                $product->product_locations()->sync($product_locations);
+            }
+            
+            if ($product->type == 'single') {
+                $productUtil->createSingleProductVariation($product->id, $product->sku, $request->input('single_dpp'), $request->input('single_dpp_inc_tax'), $request->input('profit_percent'), $request->input('single_dsp'), $request->input('single_dsp_inc_tax'));
+            } elseif ($product->type == 'variable') {
+                if (!empty($request->input('product_variation'))) {
+                    $input_variations = $request->input('product_variation');
+                    $productUtil->createVariableProductVariations($product->id, $input_variations);
+                }
+            } elseif ($product->type == 'combo') {
+
+                //Create combo_variations array by combining variation_id and quantity.
+                $combo_variations = [];
+                if (!empty($request->input('composition_variation_id'))) {
+                    $composition_variation_id = $request->input('composition_variation_id');
+                    $quantity = $request->input('quantity');
+                    $unit = $request->input('unit');
+
+                    foreach ($composition_variation_id as $key => $value) {
+                        $combo_variations[] = [
+                                'variation_id' => $value,
+                                'quantity' => $productUtil->num_uf($quantity[$key]),
+                                'unit_id' => $unit[$key]
+                            ];
+                    }
+                }
+
+                $productUtil->createSingleProductVariation($product->id, $product->sku, $request->input('item_level_purchase_price_total'), $request->input('purchase_price_inc_tax'), $request->input('profit_percent'), $request->input('selling_price'), $request->input('selling_price_inc_tax'), $combo_variations);
+            }
+
+            //Add product racks details.
+            $product_racks = $request->get('product_racks', null);
+            if (!empty($product_racks)) {
+                $productUtil->addRackDetails($business_id, $product->id, $product_racks);
+            }
+
+            //Set Module fields
+            if (!empty($request->input('has_module_data'))) {
+                $moduleUtil->getModuleData('after_product_saved', ['product' => $product, 'request' => $request]);
+            }
+
+            DB::commit();
+            $output = ['success' => 1,
+                       'data'   =>  $product,
+                            'msg' => __('product.product_added_success')
+                        ];
+
+            return new CommonResource($output);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            \Log::emergency("File:" . $e->getFile(). "Line:" . $e->getLine(). "Message:" . $e->getMessage());
+            
+            return $this->otherExceptions($e);
+        }
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $id)
+    {
+        try {
+            $user = Auth::user();
+            $business_id = $user->business_id;
+            $product_details = $request->only(['name', 'brand_id', 'unit_id', 'category_id', 'tax', 'barcode_type', 'sku', 'alert_quantity', 'tax_type', 'weight', 'product_custom_field1', 'product_custom_field2', 'product_custom_field3', 'product_custom_field4', 'product_description', 'sub_unit_ids']);
+
+            DB::beginTransaction();
+            
+            $product = Product::where('business_id', $business_id)
+                                ->where('id', $id)
+                                ->with(['product_variations'])
+                                ->first();
+
+            $moduleUtil = new ModuleUtil();
+            $productUtil = new ProductUtil();
+            $module_form_fields = $moduleUtil->getModuleFormField('product_form_fields');
+            if (!empty($module_form_fields)) {
+                foreach ($module_form_fields as $column) {
+                    $product->$column = $request->input($column);
+                }
+            }
+            
+            if (isset($product_details['name']))
+                $product->name = $product_details['name'];
+            if (isset($product_details['brand_id']))
+                $product->brand_id = $product_details['brand_id'];
+            if (isset($product_details['unit_id']))
+            $product->unit_id = $product_details['unit_id'];
+            if (isset($product_details['category_id']))
+            $product->category_id = $product_details['category_id'];
+            if (isset($product_details['tax']))
+            $product->tax = $product_details['tax'];
+            if (isset($product_details['barcode_type']))
+            $product->barcode_type = $product_details['barcode_type'];
+            if (isset($product_details['sku']))
+            $product->sku = $product_details['sku'];
+            if (isset($product_details['alert_quantity']))
+            $product->alert_quantity = $productUtil->num_uf($product_details['alert_quantity']);
+            if (isset($product_details['tax_type']))
+            $product->tax_type = $product_details['tax_type'];
+            if (isset($product_details['weight']))
+            $product->weight = $product_details['weight'];
+            if (isset($product_details['product_custom_field1']))
+            $product->product_custom_field1 = $product_details['product_custom_field1'];
+            if (isset($product_details['product_custom_field2']))
+            $product->product_custom_field2 = $product_details['product_custom_field2'];
+            if (isset($product_details['product_custom_field3']))
+            $product->product_custom_field3 = $product_details['product_custom_field3'];
+            if (isset($product_details['product_custom_field4']))
+            $product->product_custom_field4 = $product_details['product_custom_field4'];
+            if (isset($product_details['product_description']))
+            $product->product_description = $product_details['product_description'];
+            if (isset($product_details['sub_unit_ids']))
+            $product->sub_unit_ids = !empty($product_details['sub_unit_ids']) ? $product_details['sub_unit_ids'] : null;
+            if (isset($product_details['warranty_id']))
+            $product->warranty_id = !empty($request->input('warranty_id')) ? $request->input('warranty_id') : null;
+
+            if (!empty($request->input('enable_stock')) &&  $request->input('enable_stock') == 1) {
+                $product->enable_stock = 1;
+            } else {
+                $product->enable_stock = 0;
+            }
+
+            $product->not_for_selling = (!empty($request->input('not_for_selling')) &&  $request->input('not_for_selling') == 1) ? 1 : 0;
+
+            if (!empty($request->input('sub_category_id'))) {
+                $product->sub_category_id = $request->input('sub_category_id');
+            } else {
+                $product->sub_category_id = null;
+            }
+            
+            $businessUtil = new BusinessUtil();
+            $businessInfo = $businessUtil->getDetails($business_id);
+            $expiry_enabled = $businessInfo['enable_product_expiry'];
+            if (!empty($expiry_enabled)) {
+                if (!empty($request->input('expiry_period_type')) && !empty($request->input('expiry_period')) && ($product->enable_stock == 1)) {
+                    $product->expiry_period_type = $request->input('expiry_period_type');
+                    $product->expiry_period = $productUtil->num_uf($request->input('expiry_period'));
+                } else {
+                    $product->expiry_period_type = null;
+                    $product->expiry_period = null;
+                }
+            }
+
+            if (!empty($request->input('enable_sr_no')) &&  $request->input('enable_sr_no') == 1) {
+                $product->enable_sr_no = 1;
+            } else {
+                $product->enable_sr_no = 0;
+            }
+
+            $product->save();
+            $product->touch();
+
+            //Add product locations
+            $product_locations = !empty($request->input('product_locations')) ?
+                                $request->input('product_locations') : [];
+            $product->product_locations()->sync($product_locations);
+            
+            if ($product->type == 'single') {
+                $single_data = $request->only(['single_variation_id', 'single_dpp', 'single_dpp_inc_tax', 'single_dsp_inc_tax', 'profit_percent', 'single_dsp']);
+                $variation = Variation::where('product_id', $product->id)->first();
+
+                $variation->sub_sku = $product->sku;
+                $variation->default_purchase_price = $productUtil->num_uf($single_data['single_dpp']);
+                $variation->dpp_inc_tax = $productUtil->num_uf($single_data['single_dpp_inc_tax']);
+                $variation->profit_percent = $productUtil->num_uf($single_data['profit_percent']);
+                $variation->default_sell_price = $productUtil->num_uf($single_data['single_dsp']);
+                $variation->sell_price_inc_tax = $productUtil->num_uf($single_data['single_dsp_inc_tax']);
+                $variation->save();
+            }
+
+            //Add product racks details.
+            $product_racks = $request->get('product_racks', null);
+            if (!empty($product_racks)) {
+                $productUtil->addRackDetails($business_id, $product->id, $product_racks);
+            }
+
+            $product_racks_update = $request->get('product_racks_update', null);
+            if (!empty($product_racks_update)) {
+                $productUtil->updateRackDetails($business_id, $product->id, $product_racks_update);
+            }
+
+            //Set Module fields
+            if (!empty($request->input('has_module_data'))) {
+                $moduleUtil->getModuleData('after_product_saved', ['product' => $product, 'request' => $request]);
+            }
+
+            DB::commit();
+            $output = ['success' => 1,
+                        'data'  =>  $product,
+                            'msg' => __('product.product_updated_success')
+                        ];
+            return new CommonResource($output);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::emergency("File:" . $e->getFile(). "Line:" . $e->getLine(). "Message:" . $e->getMessage());
+            
+            return $this->otherExceptions($e);
+        }
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  \App\Product  $product
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        try {
+            $user = Auth::user();
+            $business_id = $user->business_id;
+
+            $can_be_deleted = true;
+            $error_msg = '';
+
+            //Check if any purchase or transfer exists
+            $count = PurchaseLine::join(
+                'transactions as T',
+                'purchase_lines.transaction_id',
+                '=',
+                'T.id'
+            )
+                                ->whereIn('T.type', ['purchase'])
+                                ->where('T.business_id', $business_id)
+                                ->where('purchase_lines.product_id', $id)
+                                ->count();
+            if ($count > 0) {
+                $can_be_deleted = false;
+                $error_msg = __('lang_v1.purchase_already_exist');
+            } else {
+                //Check if any opening stock sold
+                $count = PurchaseLine::join(
+                    'transactions as T',
+                    'purchase_lines.transaction_id',
+                    '=',
+                    'T.id'
+                 )
+                                ->where('T.type', 'opening_stock')
+                                ->where('T.business_id', $business_id)
+                                ->where('purchase_lines.product_id', $id)
+                                ->where('purchase_lines.quantity_sold', '>', 0)
+                                ->count();
+                if ($count > 0) {
+                    $can_be_deleted = false;
+                    $error_msg = __('lang_v1.opening_stock_sold');
+                } else {
+                    //Check if any stock is adjusted
+                    $count = PurchaseLine::join(
+                        'transactions as T',
+                        'purchase_lines.transaction_id',
+                        '=',
+                        'T.id'
+                    )
+                                ->where('T.business_id', $business_id)
+                                ->where('purchase_lines.product_id', $id)
+                                ->where('purchase_lines.quantity_adjusted', '>', 0)
+                                ->count();
+                    if ($count > 0) {
+                        $can_be_deleted = false;
+                        $error_msg = __('lang_v1.stock_adjusted');
+                    }
+                }
+            }
+
+            $product = Product::where('id', $id)
+                            ->where('business_id', $business_id)
+                            ->with('variations')
+                            ->first();
+    
+            $moduleUtil = new ModuleUtil();
+            //Check if product is added as an ingredient of any recipe
+            if ($moduleUtil->isModuleInstalled('Manufacturing')) {
+                $variation_ids = $product->variations->pluck('id');
+
+                $exists_as_ingredient = \Modules\Manufacturing\Entities\MfgRecipeIngredient::whereIn('variation_id', $variation_ids)
+                    ->exists();
+                    if ($exists_as_ingredient) {
+                        $can_be_deleted = false;
+                        $error_msg = __('manufacturing::lang.added_as_ingredient');
+                    }
+            }
+
+            if ($can_be_deleted) {
+                if (!empty($product)) {
+                    DB::beginTransaction();
+                    //Delete variation location details
+                    VariationLocationDetails::where('product_id', $id)
+                                            ->delete();
+                    $product->delete();
+
+                    DB::commit();
+                }
+
+                $output = ['success' => true,
+                            'msg' => __("lang_v1.product_delete_success")
+                        ];
+            } else {
+                $output = ['success' => false,
+                            'msg' => $error_msg
+                        ];
+            }
+
+            return new CommonResource($output);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::emergency("File:" . $e->getFile(). "Line:" . $e->getLine(). "Message:" . $e->getMessage());
+            
+            return $this->otherExceptions($e);
+        }
     }
 }
