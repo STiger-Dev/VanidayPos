@@ -184,6 +184,15 @@ class BusinessLocationController extends Controller
             //Create a new permission related to the created location
             Permission::create(['name' => 'location.' . $location->id ]);
 
+            //Triger Dex API.
+            $dexHelpers = new DexHelpers();
+            $dexHelpers->addLocation(array(
+                "pos_id"    =>  $location->id,
+                "business_id"  =>  $business_id,
+                "name" =>  $input["name"],
+                "phone_number"  =>  $input["mobile"]
+            ));
+
             $output = ['success' => true,
                             'msg' => __("business.business_location_added_success")
                         ];

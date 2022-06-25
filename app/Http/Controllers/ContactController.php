@@ -631,6 +631,17 @@ class ContactController extends Controller
 
             $this->contactUtil->activityLog($output['data'], 'added');
 
+            //Triger Dex API.
+            $dexHelpers = new DexHelpers();
+            $dexHelpers->addCustomer(array(
+                "pos_id"    =>  $output['data']['id'],
+                "email" =>  $input["email"],
+                "first_name"    =>  $input["first_name"],
+                "last_name" =>  $input["last_name"],
+                "dob"   =>  $input["dob"],
+                "phone_number"  =>  $input["mobile"]
+            ));
+
         } catch (\Exception $e) {
             \Log::emergency("File:" . $e->getFile(). "Line:" . $e->getLine(). "Message:" . $e->getMessage());
             

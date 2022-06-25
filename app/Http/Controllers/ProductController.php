@@ -24,6 +24,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\Facades\DataTables;
+use App\Http\DexHelpers;
 
 class ProductController extends Controller
 {
@@ -533,6 +534,18 @@ class ProductController extends Controller
             $output = ['success' => 1,
                             'msg' => __('product.product_added_success')
                         ];
+
+            //Triger Dex API.
+            $dexHelpers = new DexHelpers();
+            $dexHelpers->addProduct(array(
+                "category_id"   =>  $product["category_id"],
+                "description"   => $product["product_description"],
+                "location_id"   => $product_locations,
+                "name"          => $product["name"],
+                "pos_id"    => $product["id"],
+                "price" => $request->input('single_dpp'),
+                "sku"   => $product["sku"],
+            ));
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::emergency("File:" . $e->getFile(). "Line:" . $e->getLine(). "Message:" . $e->getMessage());
@@ -820,6 +833,16 @@ class ProductController extends Controller
             $output = ['success' => 1,
                             'msg' => __('product.product_updated_success')
                         ];
+
+            //Triger Dex API.
+            $dexHelpers = new DexHelpers();
+            $dexHelpers->updateProduct($product->id, array(
+                "name"   =>  $product->name,
+                "sku"   => $product->sku,
+                "category_id"   => $product->category_id,
+                "description"          => $product->product_description,
+                "price" => $request->input('single_dpp')
+            ));
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::emergency("File:" . $e->getFile(). "Line:" . $e->getLine(). "Message:" . $e->getMessage());
@@ -947,6 +970,10 @@ class ProductController extends Controller
                     $output = ['success' => true,
                                 'msg' => __("lang_v1.product_delete_success")
                             ];
+
+                    //Triger Dex API.
+                    $dexHelpers = new DexHelpers();
+                    $dexHelpers->deleteProduct($id);
                 } else {
                     $output = ['success' => false,
                                 'msg' => $error_msg

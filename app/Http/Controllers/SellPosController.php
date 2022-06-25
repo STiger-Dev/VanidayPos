@@ -62,6 +62,7 @@ use Razorpay\Api\Api;
 use App\TransactionPayment;
 use Stripe\Charge;
 use Stripe\Stripe;
+use App\Http\DexHelpers;
 
 class SellPosController extends Controller
 {
@@ -482,6 +483,7 @@ class SellPosController extends Controller
                 }
 
                 //Check for final and do some processing.
+                $salesItemInfo = array();
                 if ($input['status'] == 'final') {
                     //update product stock
                     foreach ($input['products'] as $product) {
@@ -508,6 +510,11 @@ class SellPosController extends Controller
                                     $input['location_id']
                                 );
                         }
+
+                        array_push($salesItemInfo, array(
+                            "product_id"    =>  $product['product_id'],
+                            "quantity"      =>  $product['quantity']
+                        ));
                     }
 
                     //Add payments to Cash Register
@@ -596,6 +603,16 @@ class SellPosController extends Controller
                 if (!empty($whatsapp_link)) {
                     $output['whatsapp_link'] = $whatsapp_link;
                 }
+
+                //Triger Dex API.
+                $dexHelpers = new DexHelpers();
+                $dexHelpers->addSales(array(
+                    "customer_id"   =>  $contact_id,
+                    "location_id"   =>  $input['location_id'],
+                    "pos_id"        =>  $transaction->id,
+                    "sales_item"   => $salesItemInfo,
+                    "status"          => $input['status']
+                ));
             } else {
                 $output = ['success' => 0,
                             'msg' => trans("messages.something_went_wrong")
@@ -1301,6 +1318,22 @@ class SellPosController extends Controller
                 if (!empty($whatsapp_link)) {
                     $output['whatsapp_link'] = $whatsapp_link;
                 }
+
+                $salesItemInfo = array();
+                foreach ($input['products'] as $product) {
+                    array_push($salesItemInfo, array(
+                                            "product_id"    =>  $product['product_id'],
+                                            "quantity"      =>  $product['quantity']
+                                        ));
+                }
+
+                //Triger Dex API.
+                $dexHelpers = new DexHelpers();
+                $dexHelpers->updateSales($id, array(
+                    "customer_id"   =>  $contact_id,
+                    "sales_item"   => $salesItemInfo,
+                    "status"          => $input['status']
+                ));
             } else {
                 $output = ['success' => 0,
                             'msg' => trans("messages.something_went_wrong")
@@ -1368,6 +1401,10 @@ class SellPosController extends Controller
                 $output = $this->transactionUtil->deleteSale($business_id, $id);
                 
                 DB::commit();
+
+                //Triger Dex API.
+                $dexHelpers = new DexHelpers();
+                $dexHelpers->deleteSales($id);
             } catch (\Exception $e) {
                 DB::rollBack();
                 \Log::emergency("File:" . $e->getFile(). "Line:" . $e->getLine(). "Message:" . $e->getMessage());
