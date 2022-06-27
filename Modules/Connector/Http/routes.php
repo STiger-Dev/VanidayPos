@@ -18,7 +18,7 @@ Route::group(['middleware' => ['auth:api', 'timezone'], 'prefix' => 'connector/a
 
 	Route::resource('unit', 'UnitController', ['only' => ['index', 'show']]);
 
-	Route::resource('taxonomy', 'CategoryController', ['only' => ['index', 'show']]);
+	Route::resource('taxonomy', 'CategoryController', ['only' => ['index', 'show', 'store', 'update', 'destroy']]);
 
 	Route::resource('brand', 'BrandController', ['only' => ['index', 'show']]);
 
