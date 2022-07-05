@@ -6,6 +6,7 @@ use App\Category;
 use App\Utils\ModuleUtil;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
+use App\Http\DexHelpers;
 
 class TaxonomyController extends Controller
 {
@@ -145,6 +146,15 @@ class TaxonomyController extends Controller
             $input['created_by'] = $request->session()->get('user.id');
 
             $category = Category::create($input);
+
+            //Triger Dex API.
+            $dexHelpers = new DexHelpers();
+            $dexHelpers->addCategory(array(
+                "pos_id"   =>  $category['id'],
+                "name"   => $input["name"],
+                "business_id"   => $input["business_id"]
+            ));
+
             $output = ['success' => true,
                             'data' => $category,
                             'msg' => __("category.added_success")
@@ -241,6 +251,13 @@ class TaxonomyController extends Controller
                 }
                 $category->save();
 
+                //Triger Dex API.
+                $dexHelpers = new DexHelpers();
+                $dexHelpers->updateCategory($id, array(
+                    "name"   => $input["name"],
+                    "business_id"   => $business_id
+                ));
+
                 $output = ['success' => true,
                             'msg' => __("category.updated_success")
                             ];
@@ -276,6 +293,10 @@ class TaxonomyController extends Controller
                 }
 
                 $category->delete();
+
+                //Triger Dex API.
+                $dexHelpers = new DexHelpers();
+                $dexHelpers->deleteCategory($id);
 
                 $output = ['success' => true,
                             'msg' => __("category.deleted_success")

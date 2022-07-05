@@ -108,4 +108,40 @@ class DexHelpers
         ]);
         $client->request("DELETE" ,"/erp/sales/{$id}");
     }
+
+    public function addCategory($params) {
+        try {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $this->dexUrl
+            ]);
+            $client->request("POST" ,"/erp/category", ['body'=>json_encode($params)]);
+        } catch (\Exception $e) {
+            return;
+        }
+    }
+
+    public function updateCategory($id, $params) {
+        try {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $this->dexUrl
+            ]);
+            $client->request("PATCH" ,"/erp/category/{$id}", ['body'=>json_encode($params)]);
+        } catch (\Exception $e) {
+            return;
+        }
+    }
+
+    public function deleteCategory($id) {
+        try {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $this->dexUrl
+            ]);
+            $client->request("DELETE" ,"/erp/category/{$id}");
+        } catch (\Exception $e) {
+            return ;
+        }
+    }
 }
