@@ -14,99 +14,147 @@ class DexHelpers
     }
 
     public function addCustomer($params) {
-        $client = new Client([
-            // Base URI is used with relative requests
-            'base_uri' => $this->dexUrl
-        ]);
-        $client->request("POST" ,"/erp/customers", ['body'=>json_encode($params)]);
+        try {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $this->dexUrl
+            ]);
+            $client->request("POST" ,"/erp/customers", ['body'=>json_encode($params)]);
+        } catch (\Exception $e) {
+            return;
+        }
     }
 
     public function updateCustomer($id, $params) {
-        $client = new Client([
-            // Base URI is used with relative requests
-            'base_uri' => $this->dexUrl
-        ]);
-        $client->request("PATCH" ,"/erp/customers/{$id}", ['body'=>json_encode($params)]);
+        try {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $this->dexUrl
+            ]);
+            $client->request("PATCH" ,"/erp/customers/{$id}", ['body'=>json_encode($params)]);
+        } catch (\Exception $e) {
+            return;
+        }
     }
 
     public function deleteCustomer($id) {
-        $client = new Client([
-            // Base URI is used with relative requests
-            'base_uri' => $this->dexUrl
-        ]);
-        $client->request("DELETE" ,"/erp/customers/{$id}");
+        try {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $this->dexUrl
+            ]);
+            $client->request("DELETE" ,"/erp/customers/{$id}");
+        } catch (\Exception $e) {
+            return;
+        }
     }
 
     public function addProduct($params) {
-        $client = new Client([
-            // Base URI is used with relative requests
-            'base_uri' => $this->dexUrl
-        ]);
-        $client->request("POST" ,"/erp/product", ['body'=>json_encode($params)]);
+        try {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $this->dexUrl
+            ]);
+            $client->request("POST" ,"/erp/product", ['body'=>json_encode($params)]);
+        } catch (\Exception $e) {
+            return;
+        }
     }
 
     public function updateProduct($id, $params) {
-        $client = new Client([
-            // Base URI is used with relative requests
-            'base_uri' => $this->dexUrl
-        ]);
-        $client->request("PATCH" ,"/erp/product/{$id}", ['body'=>json_encode($params)]);
+        try {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $this->dexUrl
+            ]);
+            $client->request("PATCH" ,"/erp/product/{$id}", ['body'=>json_encode($params)]);
+        } catch (\Exception $e) {
+            return;
+        }
     }
 
     public function deleteProduct($id) {
-        $client = new Client([
-            // Base URI is used with relative requests
-            'base_uri' => $this->dexUrl
-        ]);
-        $client->request("DELETE" ,"/erp/product/{$id}");
+        try {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $this->dexUrl
+            ]);
+            $client->request("DELETE" ,"/erp/product/{$id}");
+        } catch (\Exception $e) {
+            return;
+        }
     }
 
     public function addLocation($params) {
-        $client = new Client([
-            // Base URI is used with relative requests
-            'base_uri' => $this->dexUrl
-        ]);
-        $client->request("POST" ,"/erp/location", ['body'=>json_encode($params)]);
+        try {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $this->dexUrl
+            ]);
+            $client->request("POST" ,"/erp/location", ['body'=>json_encode($params)]);
+        } catch (\Exception $e) {
+            return;
+        }
     }
 
     public function updateLocation($id, $params) {
-        $client = new Client([
-            // Base URI is used with relative requests
-            'base_uri' => $this->dexUrl
-        ]);
-        $client->request("PATCH" ,"/erp/location/{$id}", ['body'=>json_encode($params)]);
+        try {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $this->dexUrl
+            ]);
+            $client->request("PATCH" ,"/erp/location/{$id}", ['body'=>json_encode($params)]);
+        } catch (\Exception $e) {
+            return;
+        }
     }
 
     public function deleteLocation($id) {
-        $client = new Client([
-            // Base URI is used with relative requests
-            'base_uri' => $this->dexUrl
-        ]);
-        $client->request("DELETE" ,"/erp/location/{$id}");
+        try {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $this->dexUrl
+            ]);
+            $client->request("DELETE" ,"/erp/location/{$id}");
+        } catch (\Exception $e) {
+            return;
+        }
     }
 
     public function addSales($params) {
-        $client = new Client([
-            // Base URI is used with relative requests
-            'base_uri' => $this->dexUrl
-        ]);
-        $client->request("POST" ,"/erp/sales", ['body'=>json_encode($params)]);
+        try {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $this->dexUrl
+            ]);
+            $client->request("POST" ,"/erp/sales", ['body'=>json_encode($params)]);
+        } catch (\Exception $e) {
+            return;
+        }
     }
 
     public function updateSales($id, $params) {
-        $client = new Client([
-            // Base URI is used with relative requests
-            'base_uri' => $this->dexUrl
-        ]);
-        $client->request("PATCH" ,"/erp/sales/{$id}", ['body'=>json_encode($params)]);
+        try {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $this->dexUrl
+            ]);
+            $client->request("PATCH" ,"/erp/sales/{$id}", ['body'=>json_encode($params)]);
+        } catch (\Exception $e) {
+            return;
+        }
     }
 
     public function deleteSales($id) {
-        $client = new Client([
-            // Base URI is used with relative requests
-            'base_uri' => $this->dexUrl
-        ]);
-        $client->request("DELETE" ,"/erp/sales/{$id}");
+        try {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $this->dexUrl
+            ]);
+            $client->request("DELETE" ,"/erp/sales/{$id}");
+        } catch (\Exception $e) {
+            return;
+        }
     }
 
     public function addCategory($params) {
