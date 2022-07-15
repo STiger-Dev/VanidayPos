@@ -265,7 +265,7 @@ class BusinessLocationController extends ApiController
             $location = BusinessLocation::create($input);
 
             //Create a new permission related to the created location
-            Permission::create(['name' => 'location.' . $location->id ]);
+            Permission::create(['name' => 'location.' . $location->id, 'guard_name' => 'web' ]);
 
             DB::commit();
             $output = ['success' => true,

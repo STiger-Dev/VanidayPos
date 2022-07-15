@@ -1611,15 +1611,18 @@ class Util
         $user = User::create($user_details);
 
         if($user_details['user_type'] == 'user') {
-            $role = Role::findOrFail($request->input('role'));
-
-            //Remove Location permissions from role
-            $this->revokeLocationPermissionsFromRole($role);
-
-            $user->assignRole($role->name);
-
             //Grant Location permissions
-            $this->giveLocationPermissions($user, $request);
+            try {
+                $role = Role::findOrFail($request->input('role'));
+
+                //Remove Location permissions from role
+                $this->revokeLocationPermissionsFromRole($role);
+
+                $user->assignRole($role->name);
+                $this->giveLocationPermissions($user, $request);
+            } catch (\Exception $e) {
+
+            }
 
             //Assign selected contacts
             if ($user_details['selected_contacts'] == 1) {
