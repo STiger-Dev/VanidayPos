@@ -34,7 +34,7 @@ Route::group(['middleware' => ['auth:api', 'timezone'], 'prefix' => 'connector/a
 
     Route::get('user/loggedin', 'UserController@loggedin');
 	Route::post('user-registration', 'UserController@registerUser');
-	Route::resource('user', 'UserController', ['only' => ['index', 'show']]);
+	Route::resource('user', 'UserController', ['only' => ['index', 'show', 'destroy']]);
 
 	Route::resource('types-of-service', 'TypesOfServiceController', ['only' => ['index', 'show']]);
 

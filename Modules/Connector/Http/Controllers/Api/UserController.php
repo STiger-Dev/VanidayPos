@@ -467,4 +467,40 @@ class UserController extends ApiController
             return $this->otherExceptions($output['msg']);
         }
     }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        try {
+            $user = Auth::user();
+            $business_id = $user->business_id;
+            
+            $user = User::where('business_id', $business_id)
+                ->findOrFail($id);
+
+            $this->commonUtil->activityLog($user, 'deleted', null, ['name' => $user->user_full_name, 'id' => $user->id]);
+
+            $user->delete();
+            $output = ['success' => true,
+                            'msg' => __("user.user_delete_success")
+                            ];
+        } catch (\Exception $e) {
+            \Log::emergency("File:" . $e->getFile(). "Line:" . $e->getLine(). "Message:" . $e->getMessage());
+        
+            $output = ['success' => false,
+                        'msg' => __("messages.something_went_wrong")
+                    ];
+        }
+
+        if ($output['success']) {
+            return $this->respond($output);
+        } else {
+            return $this->otherExceptions($output['msg']);
+        }
+    }
 }
