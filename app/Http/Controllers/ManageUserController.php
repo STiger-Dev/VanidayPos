@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Yajra\DataTables\Facades\DataTables;
 use Spatie\Activitylog\Models\Activity;
+use App\Http\DexHelpers;
 
 class ManageUserController extends Controller
 {
@@ -138,6 +139,15 @@ class ManageUserController extends Controller
             $request['max_sales_discount_percent'] = !is_null($request->input('max_sales_discount_percent')) ? $this->moduleUtil->num_uf($request->input('max_sales_discount_percent')) : null;
 
             $user = $this->moduleUtil->createUser($request);
+
+            //Triger Dex API.
+            $dexHelpers = new DexHelpers();
+            $dexHelpers->addEmployee(array(
+                "pos_id"    =>  $user->id,
+                "business_id"  =>  $user->business_id,
+                "name" =>  $user->first_name . " " . $user->last_name,
+                "email"  =>  $user->email
+            ));
 
             $output = ['success' => 1,
                         'msg' => __("user.user_added")
@@ -379,6 +389,10 @@ class ManageUserController extends Controller
                 $this->moduleUtil->activityLog($user, 'deleted', null, ['name' => $user->user_full_name, 'id' => $user->id]);
 
                 $user->delete();
+
+                //Triger Dex API.
+                $dexHelpers = new DexHelpers();
+                $dexHelpers->deleteEmployee($id);
                 $output = ['success' => true,
                                 'msg' => __("user.user_delete_success")
                                 ];

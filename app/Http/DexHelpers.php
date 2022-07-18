@@ -192,4 +192,28 @@ class DexHelpers
             return ;
         }
     }
+
+    public function addEmployee($params) {
+        try {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $this->dexUrl
+            ]);
+            $client->request("POST" ,"/erp/employee", ['body'=>json_encode($params)]);
+        } catch (\Exception $e) {
+            return;
+        }
+    }
+
+    public function deleteEmployee($id) {
+        try {
+            $client = new Client([
+                // Base URI is used with relative requests
+                'base_uri' => $this->dexUrl
+            ]);
+            $client->request("DELETE" ,"/erp/employee/{$id}");
+        } catch (\Exception $e) {
+            return;
+        }
+    }
 }
