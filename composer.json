@@ -37,6 +37,7 @@
         "srmklive/paypal": "^1.6",
         "stripe/stripe-php": "^7.97",
         "unicodeveloper/laravel-paystack": "^1.0",
+        "xeroapi/xero-php-oauth2": "^2.14",
         "yajra/laravel-datatables-oracle": "^9.0"
     },
     "require-dev": {

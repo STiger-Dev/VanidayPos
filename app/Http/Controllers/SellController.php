@@ -27,6 +27,7 @@ use App\Product;
 use App\Media;
 use Spatie\Activitylog\Models\Activity;
 use Illuminate\Support\Facades\Artisan;
+use App\Utils\XeroUtil;
 
 class SellController extends Controller
 {
@@ -38,6 +39,7 @@ class SellController extends Controller
     protected $businessUtil;
     protected $transactionUtil;
     protected $productUtil;
+    protected $xeroUtil;
 
 
     /**
@@ -46,13 +48,14 @@ class SellController extends Controller
      * @param ProductUtils $product
      * @return void
      */
-    public function __construct(ContactUtil $contactUtil, BusinessUtil $businessUtil, TransactionUtil $transactionUtil, ModuleUtil $moduleUtil, ProductUtil $productUtil)
+    public function __construct(ContactUtil $contactUtil, BusinessUtil $businessUtil, TransactionUtil $transactionUtil, ModuleUtil $moduleUtil, ProductUtil $productUtil, XeroUtil $xeroUtil)
     {
         $this->contactUtil = $contactUtil;
         $this->businessUtil = $businessUtil;
         $this->transactionUtil = $transactionUtil;
         $this->moduleUtil = $moduleUtil;
         $this->productUtil = $productUtil;
+        $this->xeroUtil = $xeroUtil;
 
         $this->dummyPaymentLine = ['method' => '', 'amount' => 0, 'note' => '', 'card_transaction_number' => '', 'card_number' => '', 'card_type' => '', 'card_holder_name' => '', 'card_month' => '', 'card_year' => '', 'card_security' => '', 'cheque_number' => '', 'bank_account_number' => '',
         'is_return' => 0, 'transaction_no' => ''];
@@ -1632,5 +1635,26 @@ class SellController extends Controller
         Artisan::call('pos:mapPurchaseSell');
 
         echo "Mapping reset success";exit;
+    }
+
+    public function sentInvoiceToXero(Request $request)
+    {
+        $business_id = request()->session()->get('user.business_id');
+        $accessTokenInfo = $request->only(['accessToken']);
+        $sells = $this->transactionUtil->getListSells($business_id, 'sell');
+        $sells->where('transactions.payment_status', 'paid');
+        $sells->where('transactions.custom_field_1', null);
+        $sells->whereRaw("(SELECT SUM(IF(TP.is_return = 1,-1*TP.amount,TP.amount)) FROM transaction_payments AS TP WHERE
+        TP.transaction_id=transactions.id) != ''");
+        $sells->groupBy('transactions.id');
+        $invoiceData = $sells->get();      
+
+        $this->xeroUtil->sentInvoices($accessTokenInfo['accessToken'], $invoiceData);
+        
+        foreach ($invoiceData as $key => $item) {
+            $transaction = Transaction::where('id', $item['id'])->update(['custom_field_1' => 'xero_sent']);
+        }
+
+        return redirect('sells');
     }
 }

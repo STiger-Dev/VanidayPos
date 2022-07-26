@@ -129,6 +129,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/sells/quotations', 'SellController@getQuotations');
     Route::get('/sells/draft-dt', 'SellController@getDraftDatables');
     Route::resource('sells', 'SellController')->except(['show']);
+    Route::get('/sells/sent-invoice-xero', 'SellController@sentInvoiceToXero')->name('sells.sent-invoice-xero');
 
     Route::get('/import-sales', 'ImportSalesController@index');
     Route::post('/import-sales/preview', 'ImportSalesController@preview');
@@ -401,6 +402,8 @@ Route::middleware(['EcomApi'])->prefix('api/ecom')->group(function () {
 //common route
 Route::middleware(['auth'])->group(function () {
     Route::get('/logout', 'Auth\LoginController@logout')->name('logout');
+    Route::get('/xero-auth/{event}', 'Auth\XeroAuthController@auth')->name('xero.auth');
+    Route::get('/xero-callback', 'Auth\XeroAuthController@callback')->name('xero.callback');
 });
 
 Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone'])->group(function () {

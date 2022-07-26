@@ -27,6 +27,8 @@
         @can('direct_sell.access')
             @slot('tool')
                 <div class="box-tools">
+                    <a class="btn btn-block btn-primary" href="{{route('xero.auth', 'invoice')}}">
+                        <i class="fa fa-file"></i> @lang('sale.sent_invoice_xero')</a>
                     <a class="btn btn-block btn-primary" href="{{action('SellController@create')}}">
                     <i class="fa fa-plus"></i> @lang('messages.add')</a>
                 </div>
