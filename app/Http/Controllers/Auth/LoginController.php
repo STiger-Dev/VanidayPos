@@ -7,6 +7,7 @@ use App\Utils\BusinessUtil;
 use App\Utils\ModuleUtil;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
+use GuzzleHttp\Client as GuzzleClient;
 
 class LoginController extends Controller
 {
@@ -122,5 +123,25 @@ class LoginController extends Controller
         }
 
         return '/home';
+    }
+
+    public function generateToken(Request $request)
+    {
+        $username = $request->get('username');
+        $password = $request->get('password');
+
+        $http = new GuzzleClient;
+        $response = $http->post(url('/') . '/oauth/token',
+            [
+            'form_params' => [
+            'grant_type' => 'password',
+            'client_id' => '5',
+            'client_secret' => 'ljmhCdUohVRaLFs5kPn7iZCrC36MnugqYP579t5s',
+            'username' => $username,
+            'password' => $password,
+            'scope' => '',
+        ], ]);
+
+        print_r(json_decode($response->getBody()->getContents(), true));die;
     }
 }
