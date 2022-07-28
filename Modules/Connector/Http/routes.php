@@ -78,6 +78,7 @@ Route::group(['middleware' => ['auth:api', 'timezone'], 'prefix' => 'connector/a
 	Route::get('new_product', 'ProductSellController@newProduct')->name('new_product');
 	Route::get('new_sell', 'ProductSellController@newSell')->name('new_sell');
 	Route::get('new_contactapi', 'ProductSellController@newContactApi')->name('new_contactapi');
+	Route::resource('booking', 'BookingController', ['only' => ['index', 'show', 'store', 'update', 'destroy']]);
 });
 
 Route::group(['middleware' => ['auth:api', 'timezone'], 'prefix' => 'connector/api/crm', 'namespace' => 'Modules\Connector\Http\Controllers\Api\Crm'], function(){
