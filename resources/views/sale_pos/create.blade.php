@@ -5,6 +5,8 @@
 @section('content')
 <section class="content no-print">
 	<input type="hidden" id="amount_rounding_method" value="{{$pos_settings['amount_rounding_method'] ?? ''}}">
+	<input type="hidden" id="sells_detail_url" value="{{action('SellController@index')}}">
+	<input type="hidden" id="booking_url" value="{{action('Restaurant\BookingController@index')}}">
 	@if(!empty($pos_settings['allow_overselling']))
 		<input type="hidden" id="is_overselling_allowed">
 	@endif
@@ -31,6 +33,9 @@
 								@include('sale_pos.partials.pos_form_totals')
 
 								@include('sale_pos.partials.payment_modal')
+
+								<div class="modal fade" tabindex="-1" role="dialog" id="modal_invoice" data-backdrop="static">
+								</div>
 
 								@if(empty($pos_settings['disable_suspend']))
 									@include('sale_pos.partials.suspend_note_modal')
