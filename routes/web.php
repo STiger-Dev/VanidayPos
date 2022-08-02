@@ -34,6 +34,11 @@ Route::middleware(['setData'])->group(function () {
         ->name('invoice_payment');
     Route::post('/confirm-payment/{id}', 'SellPosController@confirmPayment')
         ->name('confirm_payment');
+
+    Route::get('show-qrcode/{information}', 'BusinessQrCodeController@showQrCode')->name('business.showQrcode');
+    Route::get('employee_attendance/{location_id}', 'BusinessQrCodeController@employeeAttendance')->name('business.employeeAttendance');
+    Route::post('submit_attendance', 'BusinessQrCodeController@submitAttendance')->name('business.submitAttendance');
+    Route::post('register_employeeId', 'BusinessQrCodeController@registerEmployeeId')->name('business.registerEmployeeId');
 });
 
 //Routes for authenticated users only

@@ -125,6 +125,19 @@
                 </div>
             </div>
         </div>
+        <div class="col-sm-4">
+            <div>
+                <h4>
+                    <i class="fas fa-qrcode"></i>
+                    {{__('lang_v1.qr_code_url') . ':'}}
+                </h4>
+                @foreach($location_qrcode as $key => $item)
+                    <div>
+                        <a href="{{$item['qrcode_link']}}" target="_blank">{{$item['location_name']}}</a>
+                    </div>
+                @endforeach
+            </div>
+        </div>
     </div>
      {{-- code --}}
     <div class="row hide">

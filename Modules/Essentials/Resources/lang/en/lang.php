@@ -304,4 +304,7 @@ return [
     'my_sales_targets' => 'My sales targets',
     'sales_targets' => 'Sales targets',
     'get_current_location' => 'Get current location',
+    'register_employee_id'  =>  'Register Employee ID',
+    'register_employee_success'  =>  'Employee is successfully registered',
+    'register_employee_not_member'  =>  'Employee is not member of business'
 ];

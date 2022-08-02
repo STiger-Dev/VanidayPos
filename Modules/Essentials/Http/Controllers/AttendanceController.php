@@ -57,6 +57,7 @@ class AttendanceController extends Controller
             $attendance = EssentialsAttendance::where('essentials_attendances.business_id', $business_id)
                             ->join('users as u', 'u.id', '=', 'essentials_attendances.user_id')
                             ->leftjoin('essentials_shifts as es', 'es.id', '=', 'essentials_attendances.essentials_shift_id')
+                            ->leftjoin('business_locations as bl', 'bl.id', '=', 'essentials_attendances.location_id')
                             ->select([
                                 'essentials_attendances.id',
                                 'clock_in_time',
@@ -66,7 +67,7 @@ class AttendanceController extends Controller
                                 'ip_address',
                                 DB::raw('DATE(clock_in_time) as date'),
                                 DB::raw("CONCAT(COALESCE(u.surname, ''), ' ', COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) as user"),
-                                'es.name as shift_name', 'clock_in_location', 'clock_out_location'
+                                'es.name as shift_name', 'clock_in_location', 'clock_out_location', 'bl.name as loaction_name'
                             ])->groupBy('essentials_attendances.id');
 
             $permitted_locations = auth()->user()->permitted_locations();

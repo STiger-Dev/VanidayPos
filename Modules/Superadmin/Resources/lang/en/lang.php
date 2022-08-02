@@ -209,4 +209,5 @@ return [
     'new_message_from_superadmin' => 'New message from superadmin',
     'registered_on' => 'Registered on',
     'map_box_access_token' => 'Mapbox access token',
+    'employee_id'   =>  'Employee ID'
 ];

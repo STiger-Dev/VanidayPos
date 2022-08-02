@@ -145,6 +145,7 @@
                                     <tr>
                                         <th>@lang( 'lang_v1.date' )</th>
                                         <th>@lang('essentials::lang.employee')</th>
+                                        <th>@lang( 'business.business_location' )</th>
                                         <th>@lang('essentials::lang.clock_in')</th>
                                         <th>@lang('essentials::lang.clock_out')</th>
                                         <th>@lang('essentials::lang.work_duration')</th>
@@ -215,6 +216,7 @@
                 columns: [
                     { data: 'date', name: 'clock_in_time' },
                     { data: 'user', name: 'user' },
+                    { data: 'loaction_name', name: 'loaction_name' },
                     { data: 'clock_in', name: 'clock_in', orderable: false, searchable: false},
                     { data: 'clock_out', name: 'clock_out', orderable: false, searchable: false},
                     { data: 'work_duration', name: 'work_duration', orderable: false, searchable: false},

@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
+use App\BusinessLocation;
 
 class BusinessController extends Controller
 {
@@ -328,7 +329,27 @@ class BusinessController extends Controller
 
         $weighing_scale_setting = !empty($business->weighing_scale_setting) ? $business->weighing_scale_setting : [];
 
-        return view('business.settings', compact('business', 'currencies', 'tax_rates', 'timezone_list', 'months', 'accounting_methods', 'commission_agent_dropdown', 'units_dropdown', 'date_formats', 'shortcuts', 'pos_settings', 'modules', 'theme_colors', 'email_settings', 'sms_settings', 'mail_drivers', 'allow_superadmin_email_settings', 'custom_labels', 'common_settings', 'weighing_scale_setting'));
+        $locations = BusinessLocation::where('business_locations.business_id', $business_id)->get();
+
+        $location_qrcode = array();
+        
+        foreach ($locations as $key => $item) {
+            $qrcode_info = json_encode(array(
+                "business_id"   =>  $business_id,
+                "business_name" =>  $business->name,
+                "location_id"   =>  $item['id'],
+                "location_name" =>  $item['name']
+            ));
+
+            $qrcode_link = route('business.showQrcode', base64_encode($qrcode_info));
+
+            array_push($location_qrcode, array(
+                'location_name' =>  $item['name'],
+                'qrcode_link'  =>  $qrcode_link
+            ));
+        }
+
+        return view('business.settings', compact('business', 'currencies', 'tax_rates', 'timezone_list', 'months', 'accounting_methods', 'commission_agent_dropdown', 'units_dropdown', 'date_formats', 'shortcuts', 'pos_settings', 'modules', 'theme_colors', 'email_settings', 'sms_settings', 'mail_drivers', 'allow_superadmin_email_settings', 'custom_labels', 'common_settings', 'weighing_scale_setting', 'location_qrcode'));
     }
 
     /**

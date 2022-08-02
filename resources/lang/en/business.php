@@ -106,4 +106,6 @@ return [
     'tax_number2' => 'Tax Number 2',
     'is_active' => 'Active',
     'created_by' => 'Created By',
+    'employee_id'   =>  'Employee ID',
+    'take_attendance'  =>  'Take Attendance',
 ];

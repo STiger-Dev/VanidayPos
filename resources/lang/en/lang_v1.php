@@ -275,6 +275,7 @@ return [
    'change_return' => 'Change Return',
    'date_format' => 'Date Format',
    'time_format' => 'Time Format',
+   'qr_code_url' => 'Business QR Code',
    '12_hour' => '12 Hour',
    '24_hour' => '24 Hour',
    'list_quotations' => 'List quotations',
