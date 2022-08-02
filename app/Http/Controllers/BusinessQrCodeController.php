@@ -53,7 +53,7 @@ class BusinessQrCodeController extends Controller
 
         if (!empty($employee_id)) {
             $clock_in = EssentialsAttendance::where('business_id', $business_id)
-                                ->where('user_id', auth()->user()->id)
+                                ->where('user_id', $employee_id)
                                 ->whereNull('clock_out_time')
                                 ->first();
             $employee_info = User::where('id', $employee_id)->first();
