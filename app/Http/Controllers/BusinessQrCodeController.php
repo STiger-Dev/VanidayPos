@@ -9,6 +9,7 @@ use Modules\Essentials\Entities\EssentialsAttendance;
 use App\BusinessLocation;
 use App\User;
 use App\Utils\ModuleUtil;
+use App\Utils\BusinessUtil;
 
 class BusinessQrCodeController extends Controller
 {
@@ -16,10 +17,14 @@ class BusinessQrCodeController extends Controller
 
     protected $moduleUtil;
 
+    protected $businessUtil;
+
     public function __construct(
+        BusinessUtil $businessUtil,
         ModuleUtil $moduleUtil
     )
     {
+        $this->businessUtil = $businessUtil;
         $this->moduleUtil = $moduleUtil;
     }
 
@@ -34,8 +39,10 @@ class BusinessQrCodeController extends Controller
         $qrcode_info = json_decode($qrcode_json, true);
         $qrcode_url = route('business.employeeAttendance', $qrcode_info['location_id']);
         $qrcode_img = (new QRCode)->render($qrcode_url);
+        $business_id = $qrcode_info['business_id'];
+        $business_info = $this->businessUtil->getDetails($business_id);
         
-        return view('business.show_business_qrcode', compact('qrcode_info', 'qrcode_img'));
+        return view('business.show_business_qrcode', compact('qrcode_info', 'qrcode_img', 'business_info'));
     }
     
     /**
